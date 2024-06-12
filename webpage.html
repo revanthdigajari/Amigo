@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat Bot</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: rgb(68, 249, 255);
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    #container {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+      gap: 10px;
+      padding: 10px;
+    }
+    header {
+      text-align: center;
+      background-image: linear-gradient(to right, #0277BD, #01579B);
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    #chatbot-image { 
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+    }
+    #chat-window {
+      background-color: #FFFFFF;
+      border-radius: 10px;
+      padding: 15px;
+      overflow-y: auto;
+      border: 2px solid #ddd;
+    }
+    .chat-message {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .user-message, .bot-message {
+      padding: 10px 15px;
+      border-radius: 10px;
+    }
+    .user-message {
+      background-color: #ddd;
+      max-width: 30%;
+      display: flex;
+    }
+    .bot-message {
+      background-color: #A9D8DE;
+      margin-left: auto;
+      max-width: 60%;
+    }
+    .avatar {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+      border-radius: 50%;
+    }
+    #input-area {
+      display: flex;
+      flex-direction: row;
+      justify-content: stretch;
+      align-items: stretch;
+    }
+    #input {
+      flex: 1;
+      font-size: 16px;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-family: 'Open Sans', sans-serif;
+      resize: none;
+      overflow-y: auto;
+      height: auto;
+    }   
+#audio-button,#upload-button,#submit,#mute-button,#speaker-button {
+  width: 4%;
+  height: 40px;
+  font-size: 15px;
+  background-color: rgb(68, 249, 255);
+  background-size: 100% 100%; 
+  background-repeat: no-repeat;
+  background-position: center;
+  color: transparent; 
+  border: none;
+  border-radius: 5px;
+  padding: 0; 
+  cursor: pointer;
+  outline: none; 
+  transition: background-color 0.3s ease;
+}
+#audio-button
+{
+    background-image: url('IMAGE-LOCATION');
+}
+#submit
+{
+    background-image: url('IMAGE-LOCATION');
+}
+#upload-button
+{
+    background-image: url('IMAGE-LOCATION');
+}
+#speaker-button
+{
+    background-image: url('IMAGE-LOCATION');
+}
+#mute-button
+{
+    background-image: url('IMAGE-LOCATION');
+}
+    #submit {
+      width: 4%;
+  height: 40px;
+  font-size: 15px;
+  background-color: rgb(68, 249, 255);
+  background-image: url('static/images/send_image.jpg');
+  background-size: 100% 100%; 
+  background-repeat: no-repeat;
+  background-position: center;
+  color: transparent; 
+  border: none;
+  border-radius: 5px;
+  padding: 0; 
+  cursor: pointer;
+  outline: none; 
+  transition: background-color 0.3s ease;
+    }
+    #submit:hover {
+      background-color: #01579B;
+    }
+    .image-message {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .image-message img {
+      max-width: 30%;
+      border-radius: 10px;
+    }
+    .download-icon {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      color: #fff;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 50%;
+      padding: 5px;
+      cursor: pointer;
+      z-index: 1;
+    }
+    .download-icon:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    .chatbot-image-container {
+      position: inherit;
+      top: 0;
+      right: 0;
+      margin-top: 10px;
+      align-items: flex-end;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <header>
+      <img id="chatbot-image" src="IMAGE-LOCATION" alt="Chatbot Avatar"> 
+      <h1>Chat Bot</h1>
+    </header>
+    <div id="chat-window">
+      <div class="chat-message">
+        <div class="bot-message">Hi there! How can I help you today?</div>
+      </div>
+    </div>
+    <div id="input-area">
+      <textarea id="input" placeholder="Type your message..."></textarea>
+      <button id="audio-button">Audio</button>
+      <button id="upload-button">Upload</button>
+      <button id="speaker-button">Speaker</button>
+      <button id="mute-button">mute</button>
+      <button id="submit">SEND</button>
+    </div>
+  </div>
+  <script>
+    document.getElementById('input').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.getElementById('submit').click();
+        }
+    });
+    document.getElementById('submit').addEventListener('click', async () => {
+        const userInput = document.getElementById('input').value;
+        if (userInput) {
+            addMessage('user', userInput);
+            try {
+                const response = await fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: userInput })
+                });
+                if (!response.ok) {
+                    throw new Error(`Error fetching response: ${response.status}`);
+                }
+                const data = await response.json();
+                addMessage('bot', data.response, false);
+                if (data.image) {
+                    addImage(data.image, data.video);
+                }
+            } catch (error) {
+                console.error("Error sending message:", error);
+                addMessage('bot', 'An error occurred while processing your request. Please try again later.');
+            } finally {
+                document.getElementById('input').value = '';
+                document.getElementById('input').style.height = 'auto';
+            }
+        }
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.style.display = 'none';
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+        fileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const response = await fetch('/upload_image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Error uploading file: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (data.success) {
+                        addMessage('user', `${data.predicted_label}`);
+                        addMessage('bot', data.response);
+
+                        if (data.image) {
+                            addImage(data.image, data.video);
+                        }
+                    } else {
+                        addMessage('bot', 'An error occurred while processing your request. Please try again later.');
+                    }
+                } catch (error) {
+                    addMessage('bot', 'An error occurred while processing your request. Please try again later.');
+                }
+            }
+        });
+    });
+    function addMessage(sender, text, showAvatar = true) {
+        const chatWindow = document.getElementById('chat-window');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'chat-message';
+        const messageText = document.createElement('div');
+        messageText.className = sender === 'bot' ? 'bot-message' : 'user-message';
+        messageText.innerHTML = text.replace(/\n/g, '<br>');
+
+        if (showAvatar && sender !== 'bot') {
+            const avatar = document.createElement('img');
+            avatar.className = 'avatar';
+            avatar.src = sender === 'bot' ? 'IMAGE-LOCATION' : 'IMAGE-LOCATION';
+            avatar.alt = sender === 'bot' ? 'Chatbot Avatar' : 'User Avatar';
+            messageElement.appendChild(avatar);
+        }
+        messageElement.appendChild(messageText);
+        chatWindow.appendChild(messageElement);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+    function addImage(imageSrc, videoSrc) {
+        const chatWindow = document.getElementById('chat-window');
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-message';
+        const imageElement = document.createElement('img');
+        const timestamp = new Date().getTime();
+        const updatedImageSrc = `${imageSrc}?timestamp=${timestamp}`;
+        imageElement.src = updatedImageSrc;
+        imageElement.style.width = '100%';
+        imageContainer.appendChild(imageElement);
+        const downloadIcon = document.createElement('span');
+        downloadIcon.className = 'download-icon';
+        downloadIcon.innerHTML = '&#x2B07;';
+        downloadIcon.onclick = function() {
+            const link = document.createElement('a');
+            link.href = updatedImageSrc;
+            link.download = 'image.jpg';
+            link.click();
+            URL.revokeObjectURL(link.href);
+        };
+        imageContainer.appendChild(downloadIcon);
+        if (videoSrc) {
+            const videoButton = document.createElement('button');
+            videoButton.className = 'video-link';
+            videoButton.style.width = '25%';
+            videoButton.style.height = '40px';
+            videoButton.style.marginTop = '5px';
+            videoButton.textContent = 'Watch video';
+            videoButton.onclick = function() {
+                window.open(videoSrc, '_blank');
+            };
+            imageContainer.appendChild(videoButton);
+        }
+        chatWindow.appendChild(imageContainer);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+    document.getElementById('input').addEventListener('input', function() {
+        const textarea = this;
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+    });
+    document.getElementById('audio-button').addEventListener('click', () => {
+    const recognition = new window.webkitSpeechRecognition(); 
+    recognition.lang = 'en-US'; 
+    recognition.onstart = () => {
+        console.log('Speech recognition started...');
+    };
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        console.log('Transcript:', transcript);
+        document.getElementById('input').value = transcript;
+    };
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+    };
+    recognition.onend = () => {
+        console.log('Speech recognition ended.');
+    };
+    recognition.start();
+});
+
+let audioElement;
+document.getElementById('speaker-button').addEventListener('click', () => {
+    const botMessages = document.querySelectorAll('.bot-message');
+    if (botMessages.length > 0) {
+        const lastBotMessage = botMessages[botMessages.length - 1].textContent;
+        fetch('/text_to_speech', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: lastBotMessage })
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const audioUrl = URL.createObjectURL(blob);
+            if (audioElement && !audioElement.paused) {
+                audioElement.pause(); 
+            }
+            audioElement = new Audio(audioUrl);
+            audioElement.play();
+        })
+        .catch(error => console.error('Error converting text to speech:', error));
+    }
+});
+
+document.getElementById('mute-button').addEventListener('click', () => {
+    if (audioElement && !audioElement.paused) {
+        audioElement.pause(); 
+    }
+});
+</script>
+</body>
+</html>
