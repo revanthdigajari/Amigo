@@ -1,0 +1,7 @@
+Flask==2.0.2
+requests==2.26.0
+tensorflow==2.7.0
+keras==2.7.0
+matplotlib==3.5.1
+Pillow==9.0.1
+pyttsx3==2.90
